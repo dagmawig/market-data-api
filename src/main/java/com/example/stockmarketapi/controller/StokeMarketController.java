@@ -1,7 +1,12 @@
 package com.example.stockmarketapi.controller;
 
+import com.example.stockmarketapi.Repo.DataRepo;
+import com.example.stockmarketapi.Repo.UserRepo;
+import com.example.stockmarketapi.model.Data;
 import com.example.stockmarketapi.model.Ticker;
 import com.example.stockmarketapi.service.GetService;
+import com.google.gson.Gson;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 import java.io.IOException;
@@ -45,6 +50,23 @@ public class StokeMarketController {
         CompletableFuture<HttpResponse<String>> resp = GetService.getPrice(ticker, params);
 
         return resp.get().body();
+    }
+
+    @Autowired
+    DataRepo dataRepo;
+
+    @Autowired
+    UserRepo userRepo;
+
+    @PostMapping("/addUser")
+    public void addUser(@RequestBody Data data) {
+//        Data ddd = new Data();
+//        ddd.setName("Dagggg");
+//        ddd.setUserID("ABABABABABA");
+        //dataRepo.save(data);
+        //System.out.println(new Gson().toJson(dataRepo.findAll()));
+        //Gson historyJSON = new Gson().toJson(userRepo.findAll().get(0).getHistory());
+        System.out.println(userRepo.findAll().get(0).getHistory());
     }
 
 }
