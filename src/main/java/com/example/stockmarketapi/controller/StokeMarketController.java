@@ -2,13 +2,14 @@ package com.example.stockmarketapi.controller;
 
 import com.example.stockmarketapi.Repo.DataRepo;
 import com.example.stockmarketapi.Repo.UserRepo;
-import com.example.stockmarketapi.model.Data;
-import com.example.stockmarketapi.model.Ticker;
+import com.example.stockmarketapi.model.*;
 import com.example.stockmarketapi.service.GetService;
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
+
 import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.HashMap;
@@ -30,7 +31,7 @@ public class StokeMarketController {
     @Value("${HUMAN}")
     private String human;
 
-    final Map<String, Object> params  = new HashMap<>();
+    final Map<String, Object> params = new HashMap<>();
 
     @PostMapping("/ticker")
     public String createTicker(@RequestBody final Ticker ticker) {
@@ -60,13 +61,36 @@ public class StokeMarketController {
 
     @PostMapping("/addUser")
     public void addUser(@RequestBody Data data) {
-//        Data ddd = new Data();
-//        ddd.setName("Dagggg");
-//        ddd.setUserID("ABABABABABA");
-        //dataRepo.save(data);
-        //System.out.println(new Gson().toJson(dataRepo.findAll()));
-        //Gson historyJSON = new Gson().toJson(userRepo.findAll().get(0).getHistory());
-        System.out.println(userRepo.findAll().get(0).getHistory());
+
+        GsonBuilder builder = new GsonBuilder();
+        builder.setPrettyPrinting();
+        Gson gson = builder.create();
+
+        Object user = userRepo.findAll().get(0);
+        String userJSONString = new Gson().toJson(user);
+        User userObj = gson.fromJson(userJSONString, User.class);
+        System.out.println(userObj.getHistory().getDate().get(0));
+    }
+
+    @PostMapping("/loadData")
+    public Object loadData(@RequestBody UserID data) {
+        String userID = data.getUserID();
+        User user = userRepo.findByUserID(userID);
+        Response resp = new Response();
+        if (user == null) {
+            User newUser = new User();
+            newUser.setUserID(userID);
+            Object newData = userRepo.save(newUser);
+            resp.setSuccess(true);
+            resp.setData(newData);
+            System.out.println("NEW USER: " + newUser.toString());
+        } else {
+            resp.setSuccess(true);
+            resp.setData(user);
+            System.out.println("EXISTING USER: " + user.toString());
+        }
+
+        return resp;
     }
 
 }

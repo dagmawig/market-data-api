@@ -1,38 +1,32 @@
 package com.example.stockmarketapi.model;
 
-import lombok.AllArgsConstructor;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+import lombok.*;
 import lombok.Data;
-import lombok.NoArgsConstructor;
 import org.springframework.data.mongodb.core.mapping.Document;
+
 
 @Document(collection = "datas")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class User {
-    private String userID;
-    private Object watchlist;
-    private long fund = 10000;
-    private Object portfolio;
-    private Object history;
+    @Getter
+    public String userID = "";
+    @Getter
+    public Watchlist watchlist = new Watchlist();
+    @Getter
+    public double fund = 10000;
+    @Getter
+    public Portfolio portfolio = new Portfolio();
+    @Getter
+    public History history = new History();
 
-    public String getUserID() {
-        return userID;
+    @Override
+    public String toString() {
+        Gson gson = new GsonBuilder().setPrettyPrinting().create();
+        return gson.toJson(this);
     }
 
-    public Object getWatchlist() {
-        return watchlist;
-    }
-
-    public long getFund() {
-        return fund;
-    }
-
-    public Object getPortfolio() {
-        return portfolio;
-    }
-
-    public Object getHistory() {
-        return history;
-    }
 }
