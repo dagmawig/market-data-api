@@ -12,6 +12,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
 import java.net.http.HttpResponse;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -69,11 +70,10 @@ public class StokeMarketController {
         Object user = userRepo.findAll().get(0);
         String userJSONString = new Gson().toJson(user);
         User userObj = gson.fromJson(userJSONString, User.class);
-        System.out.println(userObj.getHistory().getDate().get(0));
     }
 
     @PostMapping("/loadData")
-    public Object loadData(@RequestBody UserID data) {
+    public Object loadData(@RequestBody UserID data) throws ExecutionException, InterruptedException {
         String userID = data.getUserID();
         User user = userRepo.findByUserID(userID);
         Response resp = new Response();
@@ -86,8 +86,32 @@ public class StokeMarketController {
             System.out.println("NEW USER: " + newUser.toString());
         } else {
             resp.setSuccess(true);
+
+            params.put("token", token);
+            params.put("format", format);
+            params.put("dateformat", dateformat);
+            params.put("symbol_lookup", symbol_lookup);
+            params.put("human", human);
+
+            int pSize = user.getPortfolio().getTicker().size();
+            ArrayList<String> ticArr = new ArrayList<String>();
+            ticArr.addAll(user.getPortfolio().getTicker());
+            ticArr.addAll(user.getWatchlist().getTicker());
+
+            if(!ticArr.isEmpty()) {
+                GsonBuilder builder = new GsonBuilder();
+                builder.setPrettyPrinting();
+                Gson gson = builder.create();
+
+                ArrayList<CompletableFuture<HttpResponse<String>>> respArr = GetService.getPriceArr(ticArr, params);
+                String resp1 = respArr.get(0).get().body();
+                PriceResp respObj = gson.fromJson(resp1, PriceResp.class);
+
+            }
+
             resp.setData(user);
             System.out.println("EXISTING USER: " + user.toString());
+
         }
 
         return resp;
