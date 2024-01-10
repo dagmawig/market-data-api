@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -105,8 +106,18 @@ public class StokeMarketController {
 
                 ArrayList<CompletableFuture<HttpResponse<String>>> respArr = GetService.getPriceArr(ticArr, params);
                 String resp1 = respArr.get(0).get().body();
-                PriceResp respObj = gson.fromJson(resp1, PriceResp.class);
-
+                List<PriceResp> respObjArr = respArr.stream().map(re-> {
+                    try {
+                        return gson.fromJson(re.get().body(), PriceResp.class);
+                    } catch (InterruptedException | ExecutionException e) {
+                        throw new RuntimeException(e);
+                    }
+                }).toList();
+                List<String> priceList = respObjArr.stream().map(respEle->respEle.getAsk().get(0).toString()).toList();
+                ArrayList<String> portfolioPrice = new ArrayList<String>(priceList.subList(0,pSize));
+                ArrayList<String> watchlistPrice = new ArrayList<String>(priceList.subList(pSize, respObjArr.size()));
+                user.getPortfolio().setPrice(portfolioPrice);
+                user.getWatchlist().setPrice(watchlistPrice);
             }
 
             resp.setData(user);
