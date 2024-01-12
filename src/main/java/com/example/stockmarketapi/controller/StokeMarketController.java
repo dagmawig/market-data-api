@@ -41,8 +41,8 @@ public class StokeMarketController {
         return ticker.toString();
     }
 
-    @GetMapping("/price/{ticker}")
-    public String getPrice(@PathVariable String ticker) throws InterruptedException, IOException, ExecutionException {
+    @GetMapping("/getPrice/{ticker}")
+    public Response getPrice(@PathVariable String ticker) throws InterruptedException, IOException, ExecutionException {
 
         params.put("token", token);
         params.put("format", format);
@@ -50,9 +50,17 @@ public class StokeMarketController {
         params.put("symbol_lookup", symbol_lookup);
         params.put("human", human);
 
-        CompletableFuture<HttpResponse<String>> resp = GetService.getPrice(ticker, params);
+        GsonBuilder builder = new GsonBuilder();
+        builder.setPrettyPrinting();
+        Gson gson = builder.create();
 
-        return resp.get().body();
+        CompletableFuture<HttpResponse<String>> res = GetService.getPrice(ticker, params);
+
+        Response resp = new Response();
+        resp.setSuccess(true);
+        resp.setData(gson.fromJson(res.get().body(), PriceResp.class));
+
+        return resp;
     }
 
     @Autowired
@@ -74,7 +82,7 @@ public class StokeMarketController {
     }
 
     @PostMapping("/loadData")
-    public Object loadData(@RequestBody UserID data) throws ExecutionException, InterruptedException {
+    public Response loadData(@RequestBody UserID data) throws ExecutionException, InterruptedException {
         String userID = data.getUserID();
         User user = userRepo.findByUserID(userID);
         Response resp = new Response();
@@ -125,6 +133,18 @@ public class StokeMarketController {
 
         }
 
+        return resp;
+    }
+
+
+    @PostMapping("/updateWatchlist")
+    public Response updateWatchlist(@RequestBody WatchlistReq data) {
+        String userID = data.getUserID();
+        Watchlist watchlist = data.getWatchlist();
+        Response resp = new Response();
+        resp.setSuccess(true);
+        userRepo.updateWatchlist(userID, watchlist);
+        resp.setData(userRepo.findByUserID(userID).getWatchlist());
         return resp;
     }
 
