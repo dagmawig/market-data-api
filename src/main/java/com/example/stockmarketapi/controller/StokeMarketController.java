@@ -170,44 +170,47 @@ public class StokeMarketController {
 
         Response response = new Response();
 
-        if (limitPrice != null & price > limitPrice) {
+        if(limitPrice== null || price<=limitPrice) {
+            if (shares * price > fund) {
+                response.setSuccess(false);
+                response.setError("Your fund of $" + fund + " is less than what is needed to buy " + shares + " shares of " + ticker);
+            }
+            else {
+                History history = user.getHistory();
+                history.getTicker().add(ticker.toUpperCase());
+                history.getPrice().add(price.toString());
+                history.getShares().add(shares);
+                history.getLimit().add("Limit Buy");
+                Date date = new Date();
+                history.getDate().add(date);
+                history.getValue().add(-price * shares);
+                fund = fund - (price * shares);
+
+                Portfolio portfolio = user.getPortfolio();
+                if (!portfolio.getTicker().contains(ticker.toUpperCase())) {
+                    portfolio.getTicker().add(ticker.toUpperCase());
+                    portfolio.getShares().add(shares);
+                    portfolio.getAverageC().add(price.toString());
+                    portfolio.getPrice().add(price.toString());
+                    String message = "Success! " + shares + " shares of " + ticker.toUpperCase() + " bought at a price of $" + price + ".";
+                } else {
+                    int index = portfolio.getTicker().indexOf(ticker.toUpperCase());
+                    Integer newShares = portfolio.getShares().get(index) + shares;
+                    Double cost = (portfolio.getShares().get(index) * Double.parseDouble(portfolio.getAverageC().get(index)) + (shares * price)) / newShares;
+                    portfolio.getShares().set(index, newShares);
+                    portfolio.getAverageC().set(index, cost.toString());
+                    portfolio.getPrice().set(index, price.toString());
+                }
+
+                userRepo.updateBuyTic(userID, portfolio, fund, history);
+                user = userRepo.findByUserID(userID);
+                response.setSuccess(true);
+                response.setData(user);
+            }
+        }
+        else {
             response.setSuccess(false);
             response.setError("Current price $" + price + " is greater than limit price of $" + limitPrice);
-        } else if (shares * price > fund) {
-            response.setSuccess(false);
-            response.setError("Your fund of $" + fund + " is less than what is needed to buy " + shares + " shares of " + ticker);
-        } else {
-            History history = user.getHistory();
-            history.getTicker().add(ticker.toUpperCase());
-            history.getPrice().add(price.toString());
-            history.getShares().add(shares);
-            history.getLimit().add("Limit Buy");
-            Date date = new Date();
-            history.getDate().add(date);
-            history.getValue().add(-price * shares);
-            fund = fund - (price * shares);
-
-            Portfolio portfolio = user.getPortfolio();
-            if (!portfolio.getTicker().contains(ticker.toUpperCase())) {
-                portfolio.getTicker().add(ticker.toUpperCase());
-                portfolio.getShares().add(shares);
-                portfolio.getAverageC().add(price.toString());
-                portfolio.getPrice().add(price.toString());
-                String message = "Success! " + shares + " shares of " + ticker.toUpperCase() + " bought at a price of $" + price + ".";
-            } else {
-                int index = portfolio.getTicker().indexOf(ticker.toUpperCase());
-                Integer newShares = portfolio.getShares().get(index) + shares;
-                Double cost = (portfolio.getShares().get(index) * Double.parseDouble(portfolio.getAverageC().get(index)) + (shares * price)) / newShares;
-                portfolio.getShares().set(index, newShares);
-                portfolio.getAverageC().set(index, cost.toString());
-                portfolio.getPrice().set(index, price.toString());
-            }
-
-            userRepo.updateBuyTic(userID, portfolio, fund, history);
-            user = userRepo.findByUserID(userID);
-            response.setSuccess(true);
-            response.setData(user);
-
         }
 
         return response;
