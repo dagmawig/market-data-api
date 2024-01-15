@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
+import javax.sound.sampled.Port;
 import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.*;
@@ -170,17 +171,16 @@ public class StokeMarketController {
 
         Response response = new Response();
 
-        if(limitPrice== null || price<=limitPrice) {
+        if (limitPrice == null || price <= limitPrice) {
             if (shares * price > fund) {
                 response.setSuccess(false);
                 response.setError("Your fund of $" + fund + " is less than what is needed to buy " + shares + " shares of " + ticker);
-            }
-            else {
+            } else {
                 History history = user.getHistory();
                 history.getTicker().add(ticker.toUpperCase());
                 history.getPrice().add(price.toString());
                 history.getShares().add(shares);
-                history.getLimit().add("Limit Buy");
+                history.getLimit().add(limitPrice != null ? "Limit Buy" : "Market Buy");
                 Date date = new Date();
                 history.getDate().add(date);
                 history.getValue().add(-price * shares);
@@ -207,13 +207,77 @@ public class StokeMarketController {
                 response.setSuccess(true);
                 response.setData(user);
             }
-        }
-        else {
+        } else {
             response.setSuccess(false);
             response.setError("Current price $" + price + " is greater than limit price of $" + limitPrice);
         }
 
         return response;
+    }
+
+    @PostMapping("/sellTicker")
+    public Response sellTicker(@RequestBody SellTicReq data) throws IOException, InterruptedException, ExecutionException {
+        String userID = data.getUserID();
+        String ticker = data.getTicker();
+        Integer shares = data.getShares();
+        Double limitOrder = data.getLimitOrder();
+        User user = userRepo.findByUserID(userID);
+        Double fund = user.getFund();
+        params.put("token", token);
+        params.put("format", format);
+        params.put("dateformat", dateformat);
+        params.put("symbol_lookup", symbol_lookup);
+        params.put("human", human);
+
+        GsonBuilder builder = new GsonBuilder();
+        builder.setPrettyPrinting();
+        Gson gson = builder.create();
+
+        CompletableFuture<HttpResponse<String>> res = GetService.getPrice(ticker, params);
+
+        Double price = gson.fromJson(res.get().body(), PriceResp.class).getAsk().get(0);
+
+        Response response = new Response();
+
+        if (limitOrder == null || price >= limitOrder) {
+            Date date = new Date();
+            Portfolio portfolio = user.getPortfolio();
+            int index = portfolio.getTicker().indexOf(ticker.toUpperCase());
+            Integer currentShares = portfolio.getShares().get(index);
+            History history = user.getHistory();
+            history.getTicker().add(ticker.toUpperCase());
+            history.getPrice().add(price.toString());
+            history.getShares().add(Math.min(shares, currentShares));
+            history.getValue().add(price * Math.min(shares, currentShares));
+            history.getLimit().add(limitOrder != null ? "Limit Sell" : "Market Sell");
+            history.getDate().add(date);
+
+            fund += Math.min(shares, currentShares) * price;
+
+            Integer newShares = Math.max(currentShares - shares, 0);
+
+            if (newShares == 0) {
+                portfolio.getTicker().remove(index);
+                portfolio.getPrice().remove(index);
+                portfolio.getShares().remove(index);
+                portfolio.getAverageC().remove(index);
+            }
+            else {
+                portfolio.getShares().set(index, newShares);
+                portfolio.getPrice().set(index, price.toString());
+            }
+
+            userRepo.updateBuyTic(userID, portfolio, fund, history);
+            user = userRepo.findByUserID(userID);
+            response.setSuccess(true);
+            response.setData(user);
+        }
+        else {
+            response.setSuccess(false);
+            response.setError("Current price $" + price + " is less than limit order of $" + limitOrder);
+        }
+
+        return  response;
     }
 
 }
