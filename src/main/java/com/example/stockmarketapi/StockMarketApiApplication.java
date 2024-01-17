@@ -5,7 +5,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.data.mongodb.repository.config.EnableMongoRepositories;
 
-
+// main class
 @SpringBootApplication
 @EnableMongoRepositories(basePackageClasses = DataRepo.class)
 public class StockMarketApiApplication {

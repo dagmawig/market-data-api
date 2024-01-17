@@ -1,6 +1,5 @@
 package com.example.stockmarketapi.controller;
 
-import com.example.stockmarketapi.Repo.DataRepo;
 import com.example.stockmarketapi.Repo.UserRepo;
 import com.example.stockmarketapi.model.*;
 import com.example.stockmarketapi.service.GetService;
@@ -10,7 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.*;
 
-import javax.sound.sampled.Port;
 import java.io.IOException;
 import java.net.http.HttpResponse;
 import java.util.*;
@@ -20,6 +18,7 @@ import java.util.concurrent.ExecutionException;
 @RestController
 public class StokeMarketController {
 
+    // stock price request parameters
     @Value("${MARKET_DATA_TOKEN:undefined}")
     private String token;
     @Value("${FORMAT:undefined}")
@@ -33,12 +32,7 @@ public class StokeMarketController {
 
     final Map<String, Object> params = new HashMap<>();
 
-    @PostMapping("/ticker")
-    public String createTicker(@RequestBody final Ticker ticker) {
-        System.out.println(ticker.toString());
-        return ticker.toString();
-    }
-
+    // endpoint for stock price request
     @GetMapping("/getPrice/{ticker}")
     public Response getPrice(@PathVariable String ticker) throws InterruptedException, IOException, ExecutionException {
 
@@ -62,23 +56,9 @@ public class StokeMarketController {
     }
 
     @Autowired
-    DataRepo dataRepo;
-
-    @Autowired
     UserRepo userRepo;
 
-    @PostMapping("/addUser")
-    public void addUser(@RequestBody Data data) {
-
-        GsonBuilder builder = new GsonBuilder();
-        builder.setPrettyPrinting();
-        Gson gson = builder.create();
-
-        Object user = userRepo.findAll().get(0);
-        String userJSONString = new Gson().toJson(user);
-        User userObj = gson.fromJson(userJSONString, User.class);
-    }
-
+    // endpoint to get user profile using user ID
     @PostMapping("/loadData")
     public Response loadData(@RequestBody UserID data) throws ExecutionException, InterruptedException {
         String userID = data.getUserID();
@@ -134,7 +114,7 @@ public class StokeMarketController {
         return resp;
     }
 
-
+    // endpoint to update stock price watchlist for a given user
     @PostMapping("/updateWatchlist")
     public Response updateWatchlist(@RequestBody WatchlistReq data) {
         String userID = data.getUserID();
@@ -146,6 +126,7 @@ public class StokeMarketController {
         return resp;
     }
 
+    // endpoint that executes buying shares of a given stock
     @PostMapping("/buyTicker")
     public Response buyTicker(@RequestBody BuyTicReq data) throws IOException, InterruptedException, ExecutionException {
         String userID = data.getUserID();
@@ -215,6 +196,7 @@ public class StokeMarketController {
         return response;
     }
 
+    // endpoint that executes selling shares of a given stock
     @PostMapping("/sellTicker")
     public Response sellTicker(@RequestBody SellTicReq data) throws IOException, InterruptedException, ExecutionException {
         String userID = data.getUserID();

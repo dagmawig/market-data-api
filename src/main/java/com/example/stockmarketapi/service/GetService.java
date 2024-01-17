@@ -11,10 +11,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
+// a service that sends a get request to market data API to retrieve live stock price data
 @Service
 public class GetService {
 
@@ -31,7 +29,6 @@ public class GetService {
                 .uri(URI.create(finalURL))
                 .build();
         HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString());
-        //System.out.println(response.body());
 
         return CompletableFuture.completedFuture(response);
     }
@@ -40,9 +37,7 @@ public class GetService {
             List<CompletableFuture<HttpResponse<String>>> temp = pArray.stream().map(ticker -> {
                         try {
                             return getPrice(ticker, params);
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        } catch (InterruptedException e) {
+                        } catch (IOException | InterruptedException e) {
                             throw new RuntimeException(e);
                         }
                     }

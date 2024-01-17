@@ -9,6 +9,7 @@ import org.springframework.data.mongodb.repository.Query;
 import org.springframework.data.mongodb.repository.Update;
 import org.springframework.stereotype.Repository;
 
+// adds custom methods to Mongo Repository
 @Repository
 public interface UserRepo extends MongoRepository<User, String> {
 

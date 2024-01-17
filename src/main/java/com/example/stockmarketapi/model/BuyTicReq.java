@@ -10,5 +10,4 @@ public class BuyTicReq {
     private String ticker;
     private Integer shares;
     private Double limitPrice;
-
 }
